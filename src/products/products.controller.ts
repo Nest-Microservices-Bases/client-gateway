@@ -8,8 +8,10 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { ClientProxy } from '@nestjs/microservices';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { PRODUCT_SERVICE } from 'src/config';
 
 @Controller('products')
@@ -24,13 +26,9 @@ export class ProductsController {
   }
 
   @Get()
-  findAllProducts() {
-    try {
-      const pattern = { cmd: 'find_all' };
-      return this.productsClient.send(pattern, {});
-    } catch (error) {
-      throw new RpcException(error);
-    }
+  findAllProducts(@Query() paginationDto: PaginationDto) {
+    const pattern = { cmd: 'find_all' };
+    return this.productsClient.send(pattern, paginationDto);
   }
 
   @Get(':id')
