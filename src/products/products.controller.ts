@@ -3,15 +3,20 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   Param,
   ParseIntPipe,
   Patch,
   Post,
 } from '@nestjs/common';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { PRODUCT_SERVICE } from 'src/config';
 
 @Controller('products')
 export class ProductsController {
-  constructor() {}
+  constructor(
+    @Inject(PRODUCT_SERVICE) private readonly productsClient: ClientProxy,
+  ) {}
 
   @Post()
   createProduct(@Body() body: any) {
@@ -20,7 +25,12 @@ export class ProductsController {
 
   @Get()
   findAllProducts() {
-    return 'Find all products';
+    try {
+      const pattern = { cmd: 'find_all' };
+      return this.productsClient.send(pattern, {});
+    } catch (error) {
+      throw new RpcException(error);
+    }
   }
 
   @Get(':id')
