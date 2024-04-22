@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -11,6 +12,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { PRODUCT_SERVICE } from 'src/config';
 
@@ -21,28 +23,35 @@ export class ProductsController {
   ) {}
 
   @Post()
-  createProduct(@Body() body: any) {
+  create(@Body() body: any) {
     return `Create a new product with data: ${JSON.stringify(body)}`;
   }
 
   @Get()
-  findAllProducts(@Query() paginationDto: PaginationDto) {
+  findAll(@Query() paginationDto: PaginationDto) {
     const pattern = { cmd: 'find_all' };
     return this.productsClient.send(pattern, paginationDto);
   }
 
   @Get(':id')
-  findOneProduct(@Param('id', ParseIntPipe) id: number) {
-    return `Find one product with id: ${id}`;
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    try {
+      const product = await firstValueFrom(
+        this.productsClient.send({ cmd: 'find_one' }, { id }),
+      );
+      return product;
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
   }
 
   @Delete(':id')
-  removeProduct(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return `Remove a product with id: ${id}`;
   }
 
   @Patch(':id')
-  updateProduct(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
     return `Update a product with id: ${id} with data: ${JSON.stringify(body)}`;
   }
 }
